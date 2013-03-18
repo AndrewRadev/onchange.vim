@@ -1,7 +1,4 @@
-## Usage
-
-TODO
-
-## Contributing
-
-Pull requests are welcome, but take a look at [CONTRIBUTING.md](https://github.com/AndrewRadev/onchange.vim/blob/master/CONTRIBUTING.md) first for some guidelines.
+In theory, this should make it possible to hook into a "code change" and do
+something useful. For now, something kinda-sorta working has been implemented
+for changing a closing html tag upon editing the opening one. Far from being
+usable, though.
