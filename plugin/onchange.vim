@@ -76,6 +76,36 @@ function! s:GetTypeahead()
   return typeahead
 endfunction
 
+function! s:ReplaceMotion(motion, text)
+  try
+    let saved_view = winsaveview()
+    let register = s:DefaultRegister()
+
+    let saved_register_text = getreg(register, 1)
+    let saved_register_type = getregtype(register)
+
+    call setreg(register, a:text, 'v')
+    exec 'silent normal! '.a:motion.'"'.register.'p'
+    silent normal! gv=
+
+    call setreg(register, saved_register_text, saved_register_type)
+  finally
+    call winrestview(saved_view)
+  endtry
+endfunction
+
+" Finds the configuration's default paste register based on the 'clipboard'
+" option.
+function! s:DefaultRegister()
+  if &clipboard =~ 'unnamedplus'
+    return '+'
+  elseif &clipboard =~ 'unnamed'
+    return '*'
+  else
+    return '"'
+  endif
+endfunction
+
 " Specific implementation - HTML tags
 augroup Onchange
   autocmd!
@@ -100,7 +130,7 @@ function! s:ChangeClosingTag(change)
 
     " go back to the old tag for a bit
     let cursor = getpos('.')
-    call sj#ReplaceMotion('viw', old_tag)
+    call s:ReplaceMotion('viw', old_tag)
     call setpos('.', cursor)
     call search('<\zs\w\+', 'bc', line('.'))
 
@@ -112,14 +142,14 @@ function! s:ChangeClosingTag(change)
     endif
 
     " replace it with the new tag
-    call sj#ReplaceMotion('viw', new_tag)
+    call s:ReplaceMotion('viw', new_tag)
 
     " go back to the previous position
     call winrestview(saved_view)
     call search('<\zs\w\+\%#', 'bc', line('.'))
 
     " replace this word with the new tag as well
-    call sj#ReplaceMotion('viw', new_tag)
+    call s:ReplaceMotion('viw', new_tag)
   finally
     call winrestview(saved_view)
   endtry
