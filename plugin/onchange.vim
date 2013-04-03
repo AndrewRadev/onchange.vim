@@ -1,3 +1,14 @@
+" Upon pressing "i", "o" and the like, the s:InsertEnter function is invoked
+" by the InsertEnter autocommand.
+"
+" The "c" and "C" mappings are handled differently. They are remapped to call
+" s:InsertEnter, and when insert mode is entered, another InsertEnter is
+" called which needs to be ignored.
+"
+" Potential Bug: c + <c-c> + i
+" Potential Bug: c + <esc><esc> + i
+"
+
 if exists('g:loaded_onchange') || &cp
   finish
 endif
@@ -28,13 +39,10 @@ augroup END
 nnoremap c :silent call <SID>InsertEnter('c')<cr>
 nnoremap C :silent call <SID>InsertEnter('C')<cr>
 
-let g:insert_enter_mode = ''
-
-"foo bar three more
-
 function! s:InsertEnter(mode)
-  if g:last_change.editing_mode =~ '[cC]'
+  if a:mode !~ '[cC]' && g:last_change.editing_mode =~ '[cC]'
     " it was already called from a mapping, bail out
+    let g:last_change.editing_mode = ''
     return
   endif
 
