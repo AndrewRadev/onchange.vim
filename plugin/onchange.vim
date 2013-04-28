@@ -18,13 +18,25 @@ let s:keepcpo = &cpo
 set cpo&vim
 
 function! s:Change()
-  return {
+  let change = {
         \ 'editing_mode':      '',
         \ 'original_line':     -1,
         \ 'original_position': [],
         \ 'new_line':          -1,
         \ 'new_position':      [],
         \ }
+
+  function change.OldState()
+    call setpos('.', self.original_position)
+    call setline(line('.'), self.original_line)
+  endfunction
+
+  function change.NewState()
+    call setpos('.', self.new_position)
+    call setline(line('.'), self.new_line)
+  endfunction
+
+  return change
 endfunction
 
 let g:last_change = s:Change()
@@ -121,6 +133,7 @@ augroup Onchange
   autocmd User Onchange call s:ChangeClosingTag(g:last_change)
 augroup END
 
+" TODO (2013-04-28) If the change also touches other things, it doesn't work
 function! s:ChangeClosingTag(change)
   let change = a:change
 
@@ -132,20 +145,18 @@ function! s:ChangeClosingTag(change)
     endif
 
     let new_tag = expand('<cword>')
-    call setline(line('.'), change.original_line)
-    let old_tag = expand('<cword>')
-    call setline(line('.'), change.new_line)
 
     " go back to the old tag for a bit
+    call change.OldState()
+    let old_tag = expand('<cword>')
+
     let cursor = getpos('.')
-    call s:ReplaceMotion('viw', old_tag)
-    call setpos('.', cursor)
-    call search('<\zs\w\+', 'bc', line('.'))
+    call search('<\zs\V'.old_tag, 'bc', line('.'))
 
     " jump to the closing tag
     normal %
-    if search('</\zs\w\+', 'c', line('.')) <= 0
-      call setline(line('.'), change.new_line)
+    if search('</\zs\V'.old_tag, 'c', line('.')) <= 0
+      call change.NewState()
       return
     endif
 
@@ -154,7 +165,7 @@ function! s:ChangeClosingTag(change)
 
     " go back to the previous position
     call winrestview(saved_view)
-    call search('<\zs\w\+\%#', 'bc', line('.'))
+    call search('<\zs\V'.old_tag, 'bc', line('.'))
 
     " replace this word with the new tag as well
     call s:ReplaceMotion('viw', new_tag)
