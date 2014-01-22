@@ -73,6 +73,13 @@ augroup onchange
 augroup END
 
 function! s:TextChanged()
+  " TODO (2013-12-31) doesn't seem to work with undo before save
+  return
+
+  if !&modifiable
+    return
+  endif
+
   call b:undo_state.Update()
 
   if b:undo_state.Undoing() || b:undo_state.Saving()
